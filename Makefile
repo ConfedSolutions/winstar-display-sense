@@ -1,3 +1,6 @@
+DESTDIR=
+BINDIR=/usr/bin
+
 all: draw-image
 
 draw-image: draw-image.c
@@ -6,7 +9,7 @@ draw-image: draw-image.c
 clean:
 	-rm draw-image
 
-install:
-	install -m 755 draw-image /usr/bin/draw-image
+install: draw-image:
+	install -m 755 $< $(DESTDIR)/$(BINDIR)
 
 .PHONY: all clean install
