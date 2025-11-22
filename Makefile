@@ -9,7 +9,8 @@ draw-image: draw-image.c
 clean:
 	-rm draw-image
 
-install: draw-image:
+install: draw-image
+	install -d $(DESTDIR)/$(BINDIR)
 	install -m 755 $< $(DESTDIR)/$(BINDIR)
 
 .PHONY: all clean install
