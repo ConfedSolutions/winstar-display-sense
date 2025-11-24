@@ -49,6 +49,7 @@ static int _display_do_display_image(int spi_fd, const char *file_path);
 static int _spi_transfer16(int fd, uint16_t const *tx, uint16_t const *rx, size_t len);
 
 static uint32_t spi_speed = SPI_RD_SPEED;
+static uint32_t spi_pagesize = 4096;
 
 int main(int argc, char **argv)
 {
@@ -117,6 +118,41 @@ int main(int argc, char **argv)
 
 static int _spi_open(const char *dev_path)
 {
+	char ps_buffer[128];
+	memset(ps_buffer, 0, sizeof(ps_buffer));
+
+	// get the SPI page size
+	int ps_fd = open("/sys/module/spidev/parameters/bufsiz", O_RDONLY);
+	if (ps_fd < 0)
+	{
+		perror("open(bufsize)");
+		return -1;
+	}
+
+	int size = read(ps_fd, ps_buffer, sizeof(ps_buffer));
+	if (size < 0)
+	{
+		perror("read(bufsize)");
+		return -1;
+	}
+
+	if (close(ps_fd) < 0)
+	{
+		perror("close(bufsize)");
+		return -1;
+	}
+
+	char *end;
+	spi_pagesize = strtol(ps_buffer, &end, 10);
+	if (spi_pagesize < (320 * 240 * sizeof(uint16_t)))
+	{
+		printf("spidev.bufsiz is not optimized for single transfer, using %d transfers for screen update\r\n",
+				(320 * 240 * sizeof(uint16_t) + (spi_pagesize - 1)) / spi_pagesize);
+	}
+	else
+		printf("spidev.bufsiz is optimized for single transfer\r\n");
+
+	// open the SPI bus
 	int spi_fd = open(dev_path, O_RDWR);
 
 	uint32_t speed = SPI_WR_SPEED;
@@ -590,10 +626,10 @@ static int _display_do_display_image(int spi_fd, const char *file_path)
 
 static int _spi_transfer16(int fd, uint16_t const *tx, uint16_t const *rx, size_t len)
 {
-	// split the large transfers into page (4096 bytes) size transfers
+	// split the large transfers into page (spi_pagesize bytes) size transfers
 	while (len > 0)
 	{
-		size_t transfer = MIN(len, (4096 / sizeof(uint16_t)));
+		size_t transfer = MIN(len, (spi_pagesize / sizeof(uint16_t)));
 
 		struct spi_ioc_transfer tr = {
 			.tx_buf = (unsigned long)tx,
