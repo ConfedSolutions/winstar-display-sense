@@ -33,8 +33,8 @@
 
 #define LINE_RESET					16
 #define LINE_DC						19
-#define SPI_RD_SPEED				100000
-#define SPI_WR_SPEED				12000000
+#define SPI_RD_SPEED				1000000
+#define SPI_WR_SPEED				24000000
 
 static struct gpiod_line_request* _gpiod_request_output_line(const char *path, uint32_t offset, bool active_low, enum gpiod_line_value value, const char *consumer);
 static int _spi_open(const char *dev_path);
@@ -469,7 +469,7 @@ static int _spi_enter_data_mode(int spi_fd, struct gpiod_line_request *io_dc)
 	if (_spi_send_cmd(spi_fd, io_dc, 0x2c, NULL, 0) < 0)
 		return -1;
 
-	// switch to 12Mhz SPI clock
+	// switch to high speed SPI clock
 	spi_speed = SPI_WR_SPEED;
 
 	// enter data mode
