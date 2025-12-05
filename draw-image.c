@@ -618,6 +618,8 @@ static int _display_do_display_image(int spi_fd, const char *file_path)
 		fb[idx] = RGB(r, g, b);
 	}
 
+	stbi_image_free(img);
+
 	if (_spi_transfer16(spi_fd, fb, fb, ARRAY_SIZEOF(fb)) < 0)
 		return -1;
 
